@@ -1,6 +1,7 @@
 
 import os
 from cStringIO import StringIO
+import re
 
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdfdocument import PDFDocument
@@ -8,6 +9,32 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfinterp import PDFPageInterpreter
 from pdfminer.converter import TextConverter
+
+# =============================================================================
+HEADER_REGEXPS = [
+    # TODO: Probar con un estado de cuenta de diciembre
+    r'''Del\ (?P<start_day>\d+)[\ ]  # Dia de inicio del periodo 
+        de\ (?P<start_month>\w+)[\ ] # Mes de inicio del periodo
+        al\ (?P<end_day>\d+)[\ ]     # Dia de fin del periodo
+        de\ (?P<end_month>\w+)[\ ]   # Mes de fin del periodo
+        de\ (?P<stmt_year>\d+)       # Anio del periodo
+    ''', # Del 16 de Julio al 16 de Agosto de 2016
+]
+
+RE_FLAGS = re.X | re.I
+HEADERS = map(lambda r: re.compile(r, RE_FLAGS), HEADER_REGEXPS)
+
+
+# =============================================================================
+def get_statement_header(text):
+    """ Parsea los datos generales del estado de cuenta
+    """
+    for regexp in HEADERS:
+        print regexp.pattern
+        match = regexp.match('CLASICADel 16 de Julio al 16 de Agosto de 2016,')
+        if match:
+            print match.groupdict()
+
 
 # =============================================================================
 def read_pfd(memory_file):
@@ -40,7 +67,7 @@ def extract():
             pdf_file = open(pdf_path, 'rb')
             text = read_pfd(pdf_file)
             pdf_file.close()
-            print text
+            headers = get_statement_header(text)
 
 
 # =============================================================================

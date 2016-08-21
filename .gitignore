@@ -93,5 +93,5 @@ ENV/
 password
 .travis.yml
 *.zip
-
+test.txt
 
