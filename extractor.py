@@ -13,12 +13,17 @@ from pdfminer.converter import TextConverter
 # =============================================================================
 HEADER_REGEXPS = [
     # TODO: Probar con un estado de cuenta de diciembre
-    r'''Del\ (?P<start_day>\d+)[\ ]  # Dia de inicio del periodo 
-        de\ (?P<start_month>\w+)[\ ] # Mes de inicio del periodo
-        al\ (?P<end_day>\d+)[\ ]     # Dia de fin del periodo
-        de\ (?P<end_month>\w+)[\ ]   # Mes de fin del periodo
-        de\ (?P<stmt_year>\d+)       # Anio del periodo
+    r'''Del\ (?P<stmt_start_day>\d+)[\ ]  # Dia de inicio del periodo 
+        de\ (?P<stmt_start_month>\w+)[\ ] # Mes de inicio del periodo
+        al\ (?P<stmt_end_day>\d+)[\ ]     # Dia de fin del periodo
+        de\ (?P<stmt_end_month>\w+)[\ ]   # Mes de fin del periodo
+        de\ (?P<stmt_year>\d+)            # Anio del periodo
     ''', # Del 16 de Julio al 16 de Agosto de 2016
+    r'''fecha\ de\ corte\ al[\ ]
+        (?P<cutoff_day>\d+)[\ ] 
+        de\ (?P<cutoff_month>\w+)[\ ]
+        de\ (?P<cutoff_year>\d+)
+    ''' # fecha de corte al 16 de Agosto de 2016
 ]
 
 RE_FLAGS = re.X | re.I
@@ -30,8 +35,7 @@ def get_statement_header(text):
     """ Parsea los datos generales del estado de cuenta
     """
     for regexp in HEADERS:
-        print regexp.pattern
-        match = regexp.match('CLASICADel 16 de Julio al 16 de Agosto de 2016,')
+        match = regexp.search(text)
         if match:
             print match.groupdict()
 
@@ -49,7 +53,8 @@ def read_pfd(memory_file):
     resource_manager = PDFResourceManager()
     device = TextConverter(resource_manager, builder)
     interpreter = PDFPageInterpreter(resource_manager, device)
-    map(lambda page: interpreter.process_page(page), PDFPage.get_pages(memory_file, password=os.environ.get('PDF_PASS')))
+    pages = PDFPage.get_pages(memory_file, password=os.environ.get('PDF_PASS'))
+    map(lambda page: interpreter.process_page(page), pages)
     text = builder.getvalue()
     device.close()
     builder.close()
